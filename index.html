@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kali Linux Web Desktop</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.1.0/css/xterm.css">
+</head>
+<body>
+    <div id="desktop">
+        <div id="wallpaper"></div>
+        <div id="windows-container"></div>
+
+        <div id="taskbar">
+            <div id="start-menu-btn">
+                <img src="https://www.kali.org/images/kali-logo.svg" alt="Kali Logo" width="24">
+            </div>
+            <div id="active-apps"></div>
+            <div id="system-tray">
+                <span id="clock">00:00</span>
+            </div>
+        </div>
+
+        <div id="start-menu" class="hidden">
+            <div class="search-bar">
+                <input type="text" placeholder="Search applications...">
+            </div>
+            <div class="app-list">
+                <div class="app-item" data-app="terminal">
+                    <span class="icon">💻</span> Terminal
+                </div>
+                <div class="app-item" data-app="editor">
+                    <span class="icon">📝</span> VS Code (Web)
+                </div>
+                <div class="app-item" data-app="sync">
+                    <span class="icon">☁️</span> GitHub Sync
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/gh/copy/v86@latest/build/libv86.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.1.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.7.0/lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/idb-keyval@6/dist/umd/idb-keyval-iife.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/isomorphic-git@1.24.5/dist/bundle.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@isomorphic-git/lightning-fs@4.6.0/dist/lightning-fs.min.js"></script>
+
+    <!-- Git HTTP Plugin with Proxy -->
+    <script type="module">
+        import http from 'https://unpkg.com/isomorphic-git@1.24.5/dist/http/web/index.js';
+        window.GitHttp = http;
+    </script>
+
+    <!-- Monaco Editor -->
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.36.1/min/vs/loader.js"></script>
+
+    <script src="assets/js/main.js" type="module"></script>
+</body>
+</html>
