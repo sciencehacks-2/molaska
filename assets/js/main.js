@@ -30,7 +30,8 @@ class DesktopApp {
         }
 
         setTimeout(() => this.openApp('terminal'), 500);
-        setInterval(() => this.autoSave(), 60000);
+        // Autosave every 5 minutes to avoid UI blocking
+        setInterval(() => this.autoSave(), 300000);
     }
 
     setupEventListeners() {
@@ -50,6 +51,17 @@ class DesktopApp {
             });
         });
 
+        const saveBtn = document.getElementById('manual-save');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', () => {
+                saveBtn.textContent = '⏳ Saving...';
+                this.autoSave().then(() => {
+                    saveBtn.textContent = '💾 Save';
+                    alert('VM State saved to browser storage!');
+                });
+            });
+        }
+
         document.addEventListener('click', () => {
             const menu = document.getElementById('start-menu');
             if (menu) menu.classList.add('hidden');
@@ -65,28 +77,47 @@ class DesktopApp {
         clockEl.textContent = time;
     }
 
+    focusWindow(win) {
+        if (!win) return;
+        this.windows.forEach(w => w.style.zIndex = 10);
+        win.style.zIndex = 100;
+    }
+
     openApp(appName) {
         let title, content;
         switch(appName) {
             case 'terminal':
-                if (this.getWindowByTitle('Terminal')) return;
+                const existingTerm = this.getWindowByTitle('Terminal');
+                if (existingTerm) {
+                    this.focusWindow(existingTerm);
+                    return;
+                }
                 title = 'Terminal';
                 content = '<div class="terminal-container" id="terminal-target"></div>';
                 break;
             case 'editor':
-                if (this.getWindowByTitle('VS Code (Web)')) return;
+                const existingEditor = this.getWindowByTitle('VS Code (Web)');
+                if (existingEditor) {
+                    this.focusWindow(existingEditor);
+                    return;
+                }
                 title = 'VS Code (Web)';
                 content = '<div id="editor-container" style="width:100%; height:100%;"></div>';
                 break;
             case 'sync':
-                if (this.getWindowByTitle('GitHub Sync')) return;
+                const existingSync = this.getWindowByTitle('GitHub Sync');
+                if (existingSync) {
+                    this.focusWindow(existingSync);
+                    return;
+                }
                 title = 'GitHub Sync';
                 content = `
                     <div style="padding:20px; color:#eee; background:#1e1e1e; height:100%; font-family:sans-serif;">
                         <h3 style="color:#004d99">☁️ GitHub Sync</h3>
+                        <p style="font-size:11px; color:#888;">Uses <b>cors.isomorphic-git.org</b> proxy.</p>
                         <div style="margin-bottom:10px;">
                             <label>Token:</label>
-                            <input type="password" id="gh-token" style="width:100%; background:#222; color:#fff; border:1px solid #444;">
+                            <input type="password" id="gh-token" placeholder="GitHub PAT" style="width:100%; background:#222; color:#fff; border:1px solid #444;">
                         </div>
                         <div style="margin-bottom:10px;">
                             <label>Repo URL:</label>
@@ -97,6 +128,46 @@ class DesktopApp {
                             <button id="btn-push-real" style="flex:1; padding:8px; background:#333; border:none; color:white; cursor:pointer;">Push</button>
                         </div>
                         <div id="sync-log-real" style="margin-top:15px; height:150px; overflow:auto; background:#000; color:#0f0; font-family:monospace; font-size:11px; padding:5px; border:1px solid #333;"></div>
+                    </div>`;
+                break;
+            case 'browser':
+                title = 'Web Browser';
+                content = `
+                    <div style="display:flex; flex-direction:column; height:100%;">
+                        <div style="background:#222; padding:5px; display:flex; gap:5px;">
+                            <input type="text" id="browser-url" value="https://www.bing.com" style="flex:1; background:#333; color:white; border:1px solid #444; padding:2px 10px; border-radius:15px;">
+                            <button id="browser-go" style="background:#004d99; border:none; color:white; padding:2px 10px; border-radius:15px; cursor:pointer;">Go</button>
+                        </div>
+                        <div style="background:#f0ad4e; color:#000; font-size:10px; padding:2px 10px;">
+                            ⚠️ Some sites block iframes (CORS). Try Bing or Wikipedia.
+                        </div>
+                        <iframe id="browser-iframe" src="https://www.bing.com" style="flex:1; border:none; background:white;"></iframe>
+                    </div>`;
+                break;
+            case 'software':
+                title = 'Software Center';
+                content = `
+                    <div style="padding:20px; color:#eee; background:#1e1e1e; height:100%; font-family:sans-serif; overflow:auto;">
+                        <h3 style="color:#004d99">📦 Software Center</h3>
+                        <p style="font-size:12px; color:#888;">Install tools directly into your Linux VM.</p>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                            <div class="sw-card" style="background:#2a2a2a; padding:10px; border-radius:5px;">
+                                <strong>Nmap</strong><br><small>Network Mapper</small><br>
+                                <button onclick="window.app.installSoftware('nmap')" style="margin-top:5px; width:100%; background:#004d99; border:none; color:white; padding:5px; border-radius:3px; cursor:pointer;">Install</button>
+                            </div>
+                            <div class="sw-card" style="background:#2a2a2a; padding:10px; border-radius:5px;">
+                                <strong>Python3</strong><br><small>Programming Language</small><br>
+                                <button onclick="window.app.installSoftware('python3')" style="margin-top:5px; width:100%; background:#004d99; border:none; color:white; padding:5px; border-radius:3px; cursor:pointer;">Install</button>
+                            </div>
+                            <div class="sw-card" style="background:#2a2a2a; padding:10px; border-radius:5px;">
+                                <strong>Metasploit</strong><br><small>Exploitation Framework</small><br>
+                                <button onclick="window.app.installSoftware('metasploit-framework')" style="margin-top:5px; width:100%; background:#004d99; border:none; color:white; padding:5px; border-radius:3px; cursor:pointer;">Install</button>
+                            </div>
+                            <div class="sw-card" style="background:#2a2a2a; padding:10px; border-radius:5px;">
+                                <strong>Git</strong><br><small>Version Control</small><br>
+                                <button onclick="window.app.installSoftware('git')" style="margin-top:5px; width:100%; background:#004d99; border:none; color:white; padding:5px; border-radius:3px; cursor:pointer;">Install</button>
+                            </div>
+                        </div>
                     </div>`;
                 break;
             default:
@@ -124,7 +195,7 @@ class DesktopApp {
                 <div class="window-controls">
                     <div class="control minimize"></div>
                     <div class="control maximize"></div>
-                    <div class="control close"></div>
+                    <div class="control close" title="Close"></div>
                 </div>
             </div>
             <div class="window-content">${content}</div>
@@ -133,8 +204,10 @@ class DesktopApp {
         document.getElementById('windows-container').appendChild(win);
         this.windows.push(win);
         this.makeDraggable(win);
+        this.focusWindow(win);
 
-        win.querySelector('.close').onclick = () => {
+        win.querySelector('.close').onclick = (e) => {
+            e.stopPropagation();
             win.remove();
             this.windows = this.windows.filter(w => w !== win);
         };
@@ -145,7 +218,32 @@ class DesktopApp {
             setTimeout(() => this.initEditor(), 100);
         } else if (appName === 'sync') {
             setTimeout(() => this.initSyncUI(win), 100);
+        } else if (appName === 'browser') {
+            setTimeout(() => this.initBrowserUI(win), 100);
         }
+    }
+
+    installSoftware(pkg) {
+        if (!this.emulator) return alert('VM not running');
+        this.openApp('terminal');
+        setTimeout(() => {
+            this.emulator.serial0_send(`sudo apt update && sudo apt install -y ${pkg}\n`);
+        }, 500);
+    }
+
+    initBrowserUI(win) {
+        const input = win.querySelector('#browser-url');
+        const iframe = win.querySelector('#browser-iframe');
+        const btn = win.querySelector('#browser-go');
+
+        const navigate = () => {
+            let url = input.value;
+            if (!url.startsWith('http')) url = 'https://' + url;
+            iframe.src = url;
+        };
+
+        btn.onclick = navigate;
+        input.onkeypress = (e) => { if (e.key === 'Enter') navigate(); };
     }
 
     makeDraggable(win) {
@@ -173,8 +271,7 @@ class DesktopApp {
         };
 
         win.onmousedown = () => {
-            this.windows.forEach(w => w.style.zIndex = 10);
-            win.style.zIndex = 100;
+            this.focusWindow(win);
         };
     }
 
@@ -255,6 +352,7 @@ class DesktopApp {
                 await git.clone({
                     fs: this.fs,
                     http: window.GitHttp,
+                    corsProxy: 'https://cors.isomorphic-git.org',
                     dir: '/workspace',
                     url: url,
                     onAuth: () => ({ username: token }),
@@ -292,6 +390,7 @@ class DesktopApp {
                 await git.push({
                     fs: this.fs,
                     http: window.GitHttp,
+                    corsProxy: 'https://cors.isomorphic-git.org',
                     dir: '/workspace',
                     onAuth: () => ({ username: token })
                 });
@@ -319,7 +418,7 @@ class DesktopApp {
             bzimage: { url: "https://copy.sh/v86/images/linux4.bin" },
             initrd: { url: "https://copy.sh/v86/images/rootfs.cpio.gz" },
             autostart: true,
-            // Enable 9p filesystem for host integration
+            // Use Debian rootfs (hosted on copy.sh) which includes apt
             filesystem: {
                 baseurl: "https://copy.sh/v86/images/debian-9-rootfs/",
             }
@@ -346,11 +445,19 @@ class DesktopApp {
     async autoSave() {
         if (!this.emulator || this.isSaving || !window.idbKeyval) return;
         this.isSaving = true;
-        this.emulator.save_state(async (err, state) => {
-            if (!err && state) await window.idbKeyval.set('v86-state', state);
-            this.isSaving = false;
+        return new Promise((resolve) => {
+            this.emulator.save_state(async (err, state) => {
+                if (!err && state) {
+                    await window.idbKeyval.set('v86-state', state);
+                    console.log("State saved.");
+                }
+                this.isSaving = false;
+                resolve();
+            });
         });
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => new DesktopApp());
+document.addEventListener('DOMContentLoaded', () => {
+    window.app = new DesktopApp();
+});
